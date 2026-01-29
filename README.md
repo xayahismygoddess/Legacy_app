@@ -49,6 +49,18 @@ npm run build
 npm start
 ```
 
+El script `build` ejecuta `prisma generate` antes de `next build` (y `postinstall` también). Las API routes usan `dynamic = "force-dynamic"` para evitar errores tipo "Failed to collect page data" en Vercel.
+
+### Deploy en Vercel
+
+1. Conecta el repo y despliega. El build debería pasar.
+2. **Importante:** SQLite (`file:./dev.db`) **no funciona** en Vercel (sistema de archivos de solo lectura). En producción las APIs que usan la DB fallarán.
+3. Para producción en Vercel, usa **PostgreSQL**:
+   - Crea una base en [Neon](https://neon.tech) o [Vercel Postgres](https://vercel.com/storage/postgres).
+   - En `prisma/schema.prisma` cambia `provider` a `"postgresql"` y `url` a `env("DATABASE_URL")`.
+   - Añade `DATABASE_URL` en las variables de entorno del proyecto en Vercel.
+   - Ejecuta `npx prisma db push` y `npx tsx prisma/seed.ts` una vez contra esa DB (con `DATABASE_URL` en `.env` local).
+
 ## Estructura
 
 ```
