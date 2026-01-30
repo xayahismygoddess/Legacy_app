@@ -1,42 +1,42 @@
-import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "task-manager-legacy-secret-change-in-production"
-);
+export const COOKIE_NAME = "auth_token";
 
-const COOKIE_NAME = "task-manager-session";
+const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-export async function hashPassword(password: string): Promise<string> {
+// 🔐 Password utils
+export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
 }
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-export async function createToken(payload: { userId: number; username: string }): Promise<string> {
-  return new SignJWT(payload)
+// 🔑 JWT utils
+export async function createToken(payload: JWTPayload) {
+  return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
-    .sign(JWT_SECRET);
+    .sign(secret);
 }
 
-export async function verifyToken(token: string): Promise<{ userId: number; username: string } | null> {
+export async function verifyToken(token: string) {
+  return jwtVerify(token, secret);
+}
+
+// 👤 Session helper (ESTO FALTABA)
+export async function getSession() {
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
+
+  if (!token) return null;
+
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return { userId: payload.userId as number, username: payload.username as string };
+    const { payload } = await verifyToken(token);
+    return payload;
   } catch {
     return null;
   }
 }
-
-export async function getSession(): Promise<{ userId: number; username: string } | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifyToken(token);
-}
-
-export { COOKIE_NAME };

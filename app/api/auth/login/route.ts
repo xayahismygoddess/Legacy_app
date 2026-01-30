@@ -2,15 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, createToken, COOKIE_NAME } from "@/lib/auth";
 
-export const runtime = "nodejs";     // 👈 THIS FIXES THE BUILD
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const { username, password } = (await req.json()) as {
-      username: string;
-      password: string;
-    };
+    const { username, password } = await req.json();
 
     if (!username || !password) {
       return NextResponse.json(
@@ -48,10 +44,10 @@ export async function POST(req: Request) {
     });
 
     return res;
-  } catch (error) {
-    console.error("LOGIN ERROR:", error);
+  } catch (e) {
+    console.error(e);
     return NextResponse.json(
-      { error: "Error en el servidor" },
+      { error: "Error del servidor" },
       { status: 500 }
     );
   }
