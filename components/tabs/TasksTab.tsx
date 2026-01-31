@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 type Task = {
   id: number;
@@ -25,6 +26,7 @@ export default function TasksTab() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -35,8 +37,16 @@ export default function TasksTab() {
     dueDate: "",
     estimatedHours: "",
   });
-  const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, high: 0, overdue: 0 });
 
+  const [stats, setStats] = useState({
+    total: 0,
+    completed: 0,
+    pending: 0,
+    high: 0,
+    overdue: 0,
+  });
+
+  /* ---------------- LOAD DATA ---------------- */
   const load = useCallback(async () => {
     try {
       const [t, p, u] = await Promise.all([
@@ -47,10 +57,6 @@ export default function TasksTab() {
       if (Array.isArray(t)) setTasks(t);
       if (Array.isArray(p)) setProjects(p);
       if (Array.isArray(u)) setUsers(u);
-    } catch {
-      setTasks([]);
-      setProjects([]);
-      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -60,265 +66,229 @@ export default function TasksTab() {
     load();
   }, [load]);
 
+  /* ---------------- STATS ---------------- */
   useEffect(() => {
-    let total = tasks.length;
-    let completed = 0;
-    let pending = 0;
-    let high = 0;
-    let overdue = 0;
     const now = new Date();
-    tasks.forEach((tk) => {
-      if (tk.status === "Completada") completed++;
-      else pending++;
-      if (tk.priority === "Alta" || tk.priority === "Crítica") high++;
-      if (tk.dueDate && tk.status !== "Completada") {
-        const d = new Date(tk.dueDate);
-        if (d < now) overdue++;
-      }
+    let completed = 0,
+      pending = 0,
+      high = 0,
+      overdue = 0;
+
+    tasks.forEach((t) => {
+      t.status === "Completada" ? completed++ : pending++;
+      if (t.priority === "Alta" || t.priority === "Crítica") high++;
+      if (t.dueDate && t.status !== "Completada" && new Date(t.dueDate) < now)
+        overdue++;
     });
-    setStats({ total, completed, pending, high, overdue });
+
+    setStats({
+      total: tasks.length,
+      completed,
+      pending,
+      high,
+      overdue,
+    });
   }, [tasks]);
 
-  const clearForm = () => {
-    setForm({
-      title: "",
-      description: "",
-      status: "Pendiente",
-      priority: "Media",
-      projectId: 0,
-      assignedTo: 0,
-      dueDate: "",
-      estimatedHours: "",
-    });
-    setSelectedId(null);
-  };
-
+  /* ---------------- SELECT TASK ---------------- */
   const selectTask = (t: Task) => {
     setSelectedId(t.id);
     setForm({
       title: t.title,
       description: t.description ?? "",
-      status: t.status ?? "Pendiente",
-      priority: t.priority ?? "Media",
+      status: t.status,
+      priority: t.priority,
       projectId: t.projectId ?? 0,
       assignedTo: t.assignedToId ?? 0,
       dueDate: t.dueDate ?? "",
-      estimatedHours: t.estimatedHours ? String(t.estimatedHours) : "",
+      estimatedHours: t.estimatedHours
+        ? String(t.estimatedHours)
+        : "",
     });
   };
-
-  const add = async () => {
-    if (!form.title.trim()) {
-      alert("El título es requerido");
-      return;
-    }
-    const r = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: form.title.trim(),
-        description: form.description,
-        status: form.status,
-        priority: form.priority,
-        projectId: form.projectId || undefined,
-        assignedTo: form.assignedTo || undefined,
-        dueDate: form.dueDate || undefined,
-        estimatedHours: form.estimatedHours ? parseFloat(form.estimatedHours) : undefined,
-      }),
-    });
-    if (!r.ok) {
-      const d = await r.json();
-      alert(d.error ?? "Error");
-      return;
-    }
-    load();
-    clearForm();
-    alert("Tarea agregada");
-  };
-
-  const update = async () => {
-    if (!selectedId) {
-      alert("Selecciona una tarea");
-      return;
-    }
-    if (!form.title.trim()) {
-      alert("El título es requerido");
-      return;
-    }
-    const r = await fetch(`/api/tasks/${selectedId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: form.title.trim(),
-        description: form.description,
-        status: form.status,
-        priority: form.priority,
-        projectId: form.projectId || undefined,
-        assignedTo: form.assignedTo || undefined,
-        dueDate: form.dueDate || undefined,
-        estimatedHours: form.estimatedHours ? parseFloat(form.estimatedHours) : undefined,
-      }),
-    });
-    if (!r.ok) {
-      const d = await r.json();
-      alert(d.error ?? "Error");
-      return;
-    }
-    load();
-    clearForm();
-    alert("Tarea actualizada");
-  };
-
-  const remove = async () => {
-    if (!selectedId) {
-      alert("Selecciona una tarea");
-      return;
-    }
-    const t = tasks.find((x) => x.id === selectedId);
-    if (!t || !confirm(`¿Eliminar tarea: ${t.title}?`)) return;
-    const r = await fetch(`/api/tasks/${selectedId}`, { method: "DELETE" });
-    if (!r.ok) {
-      alert("Error al eliminar");
-      return;
-    }
-    load();
-    clearForm();
-    alert("Tarea eliminada");
-  };
-
-  const statusOpts = ["Pendiente", "En Progreso", "Completada", "Bloqueada", "Cancelada"];
-  const priorityOpts = ["Baja", "Media", "Alta", "Crítica"];
 
   if (loading) {
-    return <div className="text-liminal-void text-sm">Cargando tareas…</div>;
+    return (
+      <div className="text-white/60 tracking-widest animate-pulse">
+        CARGANDO TAREAS…
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-base md:text-lg font-bold text-liminal-deep border-b border-liminal-border pb-2">
-        Gestión de Tareas
-      </h2>
+    <>
+      {/* BACKGROUND */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-purple-900/40 via-black to-cyan-900/40" />
 
-      <section className="liminal-panel rounded-xl p-4 md:p-5">
-        <h3 className="text-sm font-semibold text-liminal-shadow mb-4">Nueva / Editar Tarea</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          <div className="sm:col-span-2">
-            <label className="block text-xs text-liminal-void mb-1">Título</label>
+      <motion.div
+        initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.9, ease: "easeOut" }}
+        className="space-y-10"
+      >
+        {/* HEADER */}
+        <motion.h2
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          className="text-xl font-bold text-white tracking-[0.25em]"
+        >
+          GESTIÓN DE TAREAS
+        </motion.h2>
+
+        {/* FORM */}
+        <motion.div
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="rounded-3xl p-6 bg-white/10 backdrop-blur-xl border border-white/20 space-y-5"
+        >
+          <h3 className="text-xs text-white/60 uppercase tracking-[0.3em]">
+            CREAR / EDITAR
+          </h3>
+
+          {/* FORM GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input
+              placeholder="Título"
               value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              onChange={(e) =>
+                setForm((f) => ({ ...f, title: e.target.value }))
+              }
+              className="md:col-span-2 vapor-input"
             />
-          </div>
-          <div>
-            <label className="block text-xs text-liminal-void mb-1">Estado</label>
+
             <select
               value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              onChange={(e) =>
+                setForm((f) => ({ ...f, status: e.target.value }))
+              }
+              className="vapor-input"
             >
-              {statusOpts.map((o) => (
-                <option key={o} value={o}>{o}</option>
+              {["Pendiente", "En Progreso", "Completada"].map((o) => (
+                <option key={o}>{o}</option>
               ))}
             </select>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-xs text-liminal-void mb-1">Descripción</label>
+
             <textarea
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               rows={2}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm resize-none"
+              placeholder="Descripción"
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+              className="md:col-span-2 vapor-input resize-none"
             />
-          </div>
-          <div>
-            <label className="block text-xs text-liminal-void mb-1">Prioridad</label>
+
             <select
               value={form.priority}
-              onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              onChange={(e) =>
+                setForm((f) => ({ ...f, priority: e.target.value }))
+              }
+              className="vapor-input"
             >
-              {priorityOpts.map((o) => (
-                <option key={o} value={o}>{o}</option>
+              {["Baja", "Media", "Alta", "Crítica"].map((o) => (
+                <option key={o}>{o}</option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="block text-xs text-liminal-void mb-1">Proyecto</label>
+
             <select
               value={form.projectId}
-              onChange={(e) => setForm((f) => ({ ...f, projectId: parseInt(e.target.value, 10) }))}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  projectId: Number(e.target.value),
+                }))
+              }
+              className="vapor-input"
             >
-              <option value={0}>—</option>
+              <option value={0}>— Proyecto —</option>
               {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="block text-xs text-liminal-void mb-1">Asignado a</label>
+
             <select
               value={form.assignedTo}
-              onChange={(e) => setForm((f) => ({ ...f, assignedTo: parseInt(e.target.value, 10) }))}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  assignedTo: Number(e.target.value),
+                }))
+              }
+              className="vapor-input"
             >
               <option value={0}>Sin asignar</option>
               {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.username}</option>
+                <option key={u.id} value={u.id}>
+                  {u.username}
+                </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="block text-xs text-liminal-void mb-1">Fecha vencimiento (YYYY-MM-DD)</label>
+
             <input
-              type="text"
+              type="date"
               value={form.dueDate}
-              onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
-              placeholder="YYYY-MM-DD"
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              onChange={(e) =>
+                setForm((f) => ({ ...f, dueDate: e.target.value }))
+              }
+              className="vapor-input"
             />
-          </div>
-          <div>
-            <label className="block text-xs text-liminal-void mb-1">Horas estimadas</label>
+
             <input
               type="number"
-              step={0.5}
+              placeholder="Horas estimadas"
               value={form.estimatedHours}
-              onChange={(e) => setForm((f) => ({ ...f, estimatedHours: e.target.value }))}
-              className="w-full liminal-input rounded-lg px-3 py-2 text-sm"
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  estimatedHours: e.target.value,
+                }))
+              }
+              className="vapor-input"
             />
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-4">
-          <button type="button" onClick={add} className="liminal-btn px-4 py-2 rounded-lg bg-liminal-void text-white text-sm">
-            Agregar
-          </button>
-          <button type="button" onClick={update} className="liminal-btn px-4 py-2 rounded-lg bg-liminal-stone text-white text-sm">
-            Actualizar
-          </button>
-          <button type="button" onClick={remove} className="liminal-btn px-4 py-2 rounded-lg bg-red-600/90 text-white text-sm">
-            Eliminar
-          </button>
-          <button type="button" onClick={clearForm} className="liminal-btn px-4 py-2 rounded-lg bg-liminal-mist text-liminal-deep text-sm">
-            Limpiar
-          </button>
-        </div>
-      </section>
 
-      <section>
-        <h3 className="text-sm font-semibold text-liminal-shadow mb-2">Lista de Tareas</h3>
-        <div className="overflow-x-auto rounded-xl border border-liminal-border">
-          <table className="table-responsive w-full text-sm">
-            <thead>
-              <tr className="bg-liminal-mist/80">
-                <th className="text-left p-2 md:p-3">ID</th>
-                <th className="text-left p-2 md:p-3">Título</th>
-                <th className="text-left p-2 md:p-3 hidden sm:table-cell">Estado</th>
-                <th className="text-left p-2 md:p-3 hidden md:table-cell">Prioridad</th>
-                <th className="text-left p-2 md:p-3 hidden lg:table-cell">Proyecto</th>
-                <th className="text-left p-2 md:p-3 hidden lg:table-cell">Asignado</th>
-                <th className="text-left p-2 md:p-3 hidden lg:table-cell">Vencimiento</th>
+          {/* ACTIONS */}
+          <div className="flex flex-wrap gap-3 pt-4">
+            {[
+              { label: "Agregar", color: "from-cyan-400 to-purple-500" },
+              { label: "Actualizar", color: "from-purple-500 to-pink-500" },
+              { label: "Eliminar", color: "from-red-500 to-pink-600" },
+              { label: "Limpiar", color: "from-white/40 to-white/10" },
+            ].map((b) => (
+              <motion.button
+                key={b.label}
+                whileHover={{
+                  y: -2,
+                  boxShadow: "0 0 25px rgba(236,72,153,0.6)",
+                }}
+                whileTap={{ scale: 0.94 }}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${b.color}`}
+              >
+                {b.label}
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* TABLE */}
+        <motion.div
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          className="rounded-3xl overflow-hidden border border-white/20 backdrop-blur-xl"
+        >
+          <table className="w-full text-sm text-white/90">
+            <thead className="bg-white/10">
+              <tr>
+                <th className="p-3 text-left">ID</th>
+                <th className="p-3 text-left">Título</th>
+                <th className="p-3 text-left hidden sm:table-cell">
+                  Estado
+                </th>
+                <th className="p-3 text-left hidden md:table-cell">
+                  Prioridad
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -326,35 +296,33 @@ export default function TasksTab() {
                 <tr
                   key={t.id}
                   onClick={() => selectTask(t)}
-                  className={`border-t border-liminal-border cursor-pointer hover:bg-liminal-mist/50 ${
-                    selectedId === t.id ? "bg-liminal-mist/70" : ""
+                  className={`cursor-pointer transition-all duration-300 ${
+                    selectedId === t.id
+                      ? "bg-pink-500/20 shadow-[inset_0_0_0_1px_rgba(236,72,153,0.8)]"
+                      : "hover:bg-white/5 hover:backdrop-blur-md"
                   }`}
                 >
-                  <td className="p-2 md:p-3" data-label="ID">{t.id}</td>
-                  <td className="p-2 md:p-3 font-medium" data-label="Título">{t.title}</td>
-                  <td className="p-2 md:p-3 hidden sm:table-cell" data-label="Estado">{t.status ?? "Pendiente"}</td>
-                  <td className="p-2 md:p-3 hidden md:table-cell" data-label="Prioridad">{t.priority ?? "Media"}</td>
-                  <td className="p-2 md:p-3 hidden lg:table-cell" data-label="Proyecto">
-                    {t.project?.name ?? "Sin proyecto"}
+                  <td className="p-3">{t.id}</td>
+                  <td className="p-3 font-medium">{t.title}</td>
+                  <td className="p-3 hidden sm:table-cell">
+                    {t.status}
                   </td>
-                  <td className="p-2 md:p-3 hidden lg:table-cell" data-label="Asignado">
-                    {t.assignedTo?.username ?? "Sin asignar"}
-                  </td>
-                  <td className="p-2 md:p-3 hidden lg:table-cell" data-label="Vencimiento">
-                    {t.dueDate ?? "—"}
+                  <td className="p-3 hidden md:table-cell">
+                    {t.priority}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
+        </motion.div>
 
-      <div className="text-sm text-liminal-void">
-        <strong className="text-liminal-shadow">Estadísticas:</strong>{" "}
-        Total: {stats.total} | Completadas: {stats.completed} | Pendientes: {stats.pending} | Alta
-        prioridad: {stats.high} | Vencidas: {stats.overdue}
-      </div>
-    </div>
+        {/* STATS */}
+        <div className="text-xs text-white/60 tracking-[0.25em] font-mono">
+          TOTAL {stats.total} · OK {stats.completed} · PEND{" "}
+          {stats.pending} · HIGH {stats.high} · LATE{" "}
+          {stats.overdue}
+        </div>
+      </motion.div>
+    </>
   );
 }

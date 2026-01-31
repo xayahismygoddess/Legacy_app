@@ -80,7 +80,7 @@ export default function CommentsTab() {
       <section className="liminal-panel rounded-xl p-4 md:p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-liminal-void mb-1">ID Tarea</label>
+            <label className="block text-xs text-white mb-1">ID Tarea</label>
             <input
               type="number"
               value={taskId}
@@ -89,7 +89,7 @@ export default function CommentsTab() {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs text-liminal-void mb-1">Comentario</label>
+            <label className="block text-xs text-white mb-1">Comentario</label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -109,7 +109,7 @@ export default function CommentsTab() {
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-liminal-shadow mb-2">Comentarios</h3>
+        <h3 className="text-sm font-semibold text-white mb-2">Comentarios</h3>
         <textarea
           readOnly
           value={output}

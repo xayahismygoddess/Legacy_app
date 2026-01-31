@@ -1,7 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
 
 :root {
   --liminal-fog: #e8e9ed;
@@ -15,6 +12,10 @@
   --liminal-border: rgba(154, 156, 166, 0.35);
 }
 
+/* =========================
+   BASE
+========================= */
+
 * {
   box-sizing: border-box;
 }
@@ -24,11 +25,20 @@ html {
 }
 
 body {
-  
-  background: linear-gradient(180deg, var(--liminal-fog) 0%, var(--liminal-mist) 40%, var(--liminal-stone) 100%);
+  font-family: var(--font-liminal), ui-monospace, monospace;
+  background: linear-gradient(
+    180deg,
+    var(--liminal-fog) 0%,
+    var(--liminal-mist) 40%,
+    var(--liminal-stone) 100%
+  );
   min-height: 100vh;
   color: var(--liminal-deep);
 }
+
+/* =========================
+   TAILWIND UTILS
+========================= */
 
 @layer utilities {
   .text-balance {
@@ -36,57 +46,110 @@ body {
   }
 }
 
-/* Liminal panel - frosted, soft */
-.liminal-panel {
-  background: var(--liminal-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--liminal-border);
-  box-shadow: 0 4px 24px rgba(45, 46, 51, 0.08);
-}
+/* =========================
+   LIMINAL PANEL
+========================= */
 
-.liminal-input {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid var(--liminal-border);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
+  /* PANEL VAPOR / LIMINAL OSCURO */
+  .liminal-panel {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+      0 0 0 1px rgba(236, 72, 153, 0.25),
+      0 25px 60px rgba(0, 0, 0, 0.55);
+  }
 
-.liminal-input:focus {
-  outline: none;
-  border-color: var(--liminal-void);
-  box-shadow: 0 0 0 3px rgba(107, 109, 118, 0.15);
-}
+  /* INPUTS / SELECTS */
+  .liminal-input {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e5e7eb;
+    backdrop-filter: blur(10px);
+  }
 
-.liminal-btn {
-  transition: background 0.2s, transform 0.05s;
-}
+  .liminal-input::placeholder {
+    color: rgba(229, 231, 235, 0.45);
+  }
+
+  .liminal-input:focus {
+    border-color: rgba(236, 72, 153, 0.7);
+    box-shadow:
+      0 0 0 1px rgba(236, 72, 153, 0.6),
+      0 0 30px rgba(34, 211, 238, 0.35);
+  }
+
+  /* SELECT FIX (texto visible al abrir) */
+  .liminal-input option {
+    background-color: #0f172a;
+    color: #e5e7eb;
+  }
+
+  select.liminal-input {
+    color-scheme: dark;
+  }
+
+  /* BOTÓN */
+  .liminal-btn {
+    background: linear-gradient(
+      135deg,
+      #22d3ee,
+      #ec4899
+    );
+    color: white;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    box-shadow:
+      0 0 25px rgba(34, 211, 238, 0.35),
+      0 0 35px rgba(236, 72, 153, 0.35);
+  }
+
+  .liminal-btn:hover {
+    box-shadow:
+      0 0 40px rgba(34, 211, 238, 0.6),
+      0 0 55px rgba(236, 72, 153, 0.6);
+  }
 
 .liminal-btn:active {
   transform: scale(0.98);
 }
 
-/* Responsive table */
+/* =========================
+   TABLE (RESPONSIVE)
+========================= */
+
 @media (max-width: 768px) {
   .table-responsive {
     display: block;
   }
+
   .table-responsive thead {
     display: none;
   }
+
   .table-responsive tr {
     display: block;
     margin-bottom: 1rem;
     padding: 0.75rem;
     border: 1px solid var(--liminal-border);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.45);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+
+  .table-responsive tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(45, 46, 51, 0.12);
+  }
+
   .table-responsive td {
     display: flex;
     justify-content: space-between;
     padding: 0.25rem 0;
     border: none;
   }
+
   .table-responsive td::before {
     content: attr(data-label);
     font-weight: 600;
@@ -95,7 +158,10 @@ body {
   }
 }
 
-/* Tab scroll on small screens */
+/* =========================
+   TABS SCROLL
+========================= */
+
 .tabs-scroll {
   overflow-x: auto;
   scrollbar-width: thin;
@@ -109,4 +175,41 @@ body {
 .tabs-scroll::-webkit-scrollbar-thumb {
   background: var(--liminal-border);
   border-radius: 4px;
+}
+
+/* =========================
+   VAPOR (DARK MODE INPUTS)
+========================= */
+
+.vapor-input {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e5e7eb;
+  outline: none;
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.vapor-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.vapor-input:focus {
+  border-color: rgba(236, 72, 153, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(236, 72, 153, 0.6),
+    0 0 25px rgba(34, 211, 238, 0.35);
+}
+
+/* Fix selects vapor */
+.vapor-input option {
+  background-color: #0f172a;
+  color: #e5e7eb;
+}
+
+select.vapor-input {
+  color-scheme: dark;
 }

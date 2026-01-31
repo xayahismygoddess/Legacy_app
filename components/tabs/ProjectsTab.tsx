@@ -110,7 +110,7 @@ export default function ProjectsTab() {
       <section className="liminal-panel rounded-xl p-4 md:p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-liminal-void mb-1">Nombre</label>
+            <label className="block text-xs text-white mb-1">Nombre</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -118,7 +118,7 @@ export default function ProjectsTab() {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs text-liminal-void mb-1">Descripción</label>
+            <label className="block text-xs text-white mb-1">Descripción</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}

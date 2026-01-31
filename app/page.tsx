@@ -51,3 +51,4 @@ export default function Home() {
     </main>
   );
 }
+//John 3:16 "Porque de tal manera amó Dios al mundo, que dio a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, sino que tenga vida eterna."

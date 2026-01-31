@@ -83,7 +83,7 @@ export default function HistoryTab() {
       <section className="liminal-panel rounded-xl p-4 md:p-5">
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="block text-xs text-liminal-void mb-1">ID Tarea</label>
+            <label className="block text-xs text-white mb-1">ID Tarea</label>
             <input
               type="number"
               value={taskId}
